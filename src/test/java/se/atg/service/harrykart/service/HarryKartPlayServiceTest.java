@@ -1,137 +1,188 @@
 package se.atg.service.harrykart.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 import se.atg.service.harrykart.exception.ZeroOrNegativeSpeedException;
-import se.atg.service.harrykart.model.*;
-import se.atg.service.harrykart.services.HarryKartPlayInterface;
+import se.atg.service.harrykart.model.HarryKart;
+import se.atg.service.harrykart.model.Participant;
+import se.atg.service.harrykart.model.Ranking;
+import se.atg.service.harrykart.services.HarryKartPlayService;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Class to handle Harry Kart race result calculation and return
- */
-@Service
-public class HarryKartPlayServiceTest implements HarryKartPlayInterface {
-    private static final Logger LOGGER = LoggerFactory.getLogger(HarryKartPlayServiceTest.class);
-    private static final int LOOP_LENGTH = 1000;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+@SpringBootTest
+@RunWith(SpringRunner.class)
+public class HarryKartPlayServiceTest {
+    private final XmlMapper xmlMapper = new XmlMapper();
+    private final ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
+
     private static final int LOOP_TIME_ROUNDING_SCALE = 10;
 
-    @Override
-    public RankingResponse play(HarryKart harryKart) throws IllegalArgumentException {
+    @Autowired
+    private HarryKartPlayService harryKartPlayService;
 
-        LOGGER.debug("play(), input: " + harryKart);
-        /*
-        Calculating match time for every participant
-         */
-        Map<String, BigDecimal> participantAndTimeMap = new HashMap<>();
-        for (Participant participant : harryKart.getParticipants()) {
-            try {
-                participantAndTimeMap.put(participant.getName(), calculateTimeForParticipant(participant, harryKart));
-            } catch (ZeroOrNegativeSpeedException e) {
-                LOGGER.info(participant.getName() + " has stopped in the race and will be ignored.");
-            }
+    private String readFileToString(String filename) throws IOException {
+        InputStream in = this.getClass().getClassLoader().getResourceAsStream(filename);
+        Objects.requireNonNull(in);
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
+            return br.lines().collect(Collectors.joining(System.lineSeparator()));
         }
-
-        /*
-        Finding top 3 participant with lowest time
-         */
-        AtomicInteger rank = new AtomicInteger(1);
-        AtomicReference<BigDecimal> time = new AtomicReference<>(BigDecimal.ZERO);
-
-        final List<Ranking> topParticipantsRank = participantAndTimeMap.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue())
-                .map(participantAndTime -> {
-
-                    if (time.get().compareTo(BigDecimal.ZERO) == 0) {
-
-                        time.set(participantAndTime.getValue());
-                        return new Ranking(rank.get(), participantAndTime.getKey());
-                    } else {
-                        if (time.get().compareTo(participantAndTime.getValue()) == 0) {
-                            /*
-                            Participants have same rank. Set the rank
-                             */
-                            return new Ranking(rank.get(), participantAndTime.getKey());
-
-                        } else {
-                            /*
-                            Participant have in different ranks. Set and increment rank
-                             */
-                            time.set(participantAndTime.getValue());
-                            return new Ranking(rank.addAndGet(1), participantAndTime.getKey());
-                        }
-                    }
-                }).filter(ranking -> rank.get() < 4).collect(Collectors.toList());
-
-        RankingResponse rankingResponse = new RankingResponse(topParticipantsRank);
-        LOGGER.info("play(), output: " + rankingResponse.toString());
-
-        return rankingResponse;
     }
 
 
-    public BigDecimal calculateTimeForParticipant(Participant participant, HarryKart harryKart) throws ZeroOrNegativeSpeedException {
-        LOGGER.debug("calculateTimeForParticipant(), input: " + participant.toString() + " " + harryKart);
+    @Test
+    public void lanesFinishInOrderTest() throws IOException {
+        HarryKart hk = xmlMapper.readValue(readFileToString("input_0.xml"), HarryKart.class);
 
-        /*
-          Extracting power ups for the participant from request
-         */
-        List<Integer> participantPowerUps = new ArrayList<>();
-        for (Loop loop : harryKart.getLoops()) {
-            participantPowerUps.add(loop.getLanes().stream().filter(lane -> lane.getNumber() == participant.getLane()).findFirst().orElseThrow(() -> new IllegalArgumentException("Lane not found for the participant: " + participant + " in the loop: " + loop)).getPowerValue());
-        }
-        /*
-          Calculating the time for the participant
-         */
-        BigDecimal calculatedTime = calculateTimeForLane(harryKart.getNumberOfLoops(), participant.getBaseSpeed(), participantPowerUps);
-        LOGGER.info("calculateTimeForParticipant(), output: " + calculatedTime);
-        return calculatedTime;
+        List<Ranking> actualRanking = harryKartPlayService.play(hk).getRanking();
+
+        List<Ranking> expectedRanking = Arrays.asList(new Ranking(1, "TIMETOBELUCKY"), new Ranking(2, "HERCULES BOKO"), new Ranking(3, "CARGO DOOR"));
+
+        assertEquals(objectWriter.writeValueAsString(expectedRanking), objectWriter.writeValueAsString(actualRanking));
     }
 
 
-    public BigDecimal calculateTimeForLane(int numberOfLoops, int baseSpeed, List<Integer> powerUps) throws IllegalArgumentException {
-        LOGGER.info("calculateTimeForLane(), input: numberOfLoops = " + numberOfLoops + ", " + "baseSpeed = " + baseSpeed + ", powerUps = " + powerUps);
+    @Test
+    public void twoWayTieTest() throws IOException {
+        HarryKart hk = xmlMapper.readValue(readFileToString("_TwoWayTieTest.xml"), HarryKart.class);
 
-        if (numberOfLoops != powerUps.size() + 1) {
-            throw new IllegalArgumentException("Invalid number of powerUps for loops. " + numberOfLoops + " loops must have " + (numberOfLoops - 1) + " powerUps.");
-        }
+        List<Ranking> actualRanking = harryKartPlayService.play(hk).getRanking();
 
-        /*
-          Calculating time for the first loop without power up
-         */
-        BigDecimal elapsedTime = calculateTimeForLoop(baseSpeed, LOOP_LENGTH);
+        assertEquals(actualRanking.get(0).getPosition(), Integer.valueOf(1));
+        assertEquals(actualRanking.get(0).getHorse(), "WAIKIKI SILVIO");
 
-        /*
-          Calculating time for remaining loops with power ups
-         */
-        for (int powerUp : powerUps) {
-            elapsedTime = elapsedTime.add(calculateTimeForLoop(baseSpeed += powerUp, LOOP_LENGTH));
-        }
+        assertEquals(actualRanking.get(1).getPosition(), Integer.valueOf(2));
+        assertEquals(actualRanking.get(1).getHorse(), "HERCULES BOKO");
+        String thirdPlace = actualRanking.get(2).getHorse();
 
-        LOGGER.info("calculateTimeForLane(), output: " + elapsedTime);
-        return elapsedTime;
+        assertEquals(actualRanking.get(2).getPosition(), Integer.valueOf(3));
+        assertEquals(actualRanking.get(3).getPosition(), Integer.valueOf(3));
+        assertTrue(thirdPlace.equals("CARGO DOOR") || thirdPlace.equals("TIMETOBELUCKY"));
+
     }
 
-    private BigDecimal calculateTimeForLoop(int speed, int loopLength) throws ZeroOrNegativeSpeedException {
-        LOGGER.info("calculateTimeForLoop(), start, input: speed = " + speed + ", loopLength = " + loopLength + ", Decimal round scale: " + LOOP_TIME_ROUNDING_SCALE);
 
-        if (speed <= 0) {
-            throw new ZeroOrNegativeSpeedException("Negative or zero speed!");
-        }
-        BigDecimal timeForLoop = BigDecimal.valueOf(loopLength).divide(BigDecimal.valueOf(speed), LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
-        LOGGER.info("calculateTimeForLoop(), finished, output: " + timeForLoop);
-        return timeForLoop;
+    /**
+     * All participants finish at the same time
+     */
+    @Test
+    public void allWayTieTest() throws IOException {
+        HarryKart hk = xmlMapper.readValue(readFileToString("_AllWayTieTest.xml"), HarryKart.class);
+
+        List<Ranking> actualRanking = harryKartPlayService.play(hk).getRanking();
+
+        actualRanking.forEach(ranking -> assertEquals(ranking.getPosition(), Integer.valueOf(1)));
     }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void invalidXmlFormatTest() throws Exception {
+        HarryKart hk = xmlMapper.readValue(readFileToString("_InvalidHarryKartFormatTest.xml"), HarryKart.class);
+
+        harryKartPlayService.play(hk);
+    }
+
+
+    @Test
+    public void zeroAndNegativePowerTest() throws IOException {
+        HarryKart hk = xmlMapper.readValue(readFileToString("_ZeroAndNegativePowerTest.xml"), HarryKart.class);
+
+        List<Ranking> actualRanking = harryKartPlayService.play(hk).getRanking();
+
+
+        List<Ranking> expectedRanking = Arrays.asList(new Ranking(1, "WAIKIKI SILVIO"), new Ranking(2, "HERCULES BOKO"));
+
+        assertEquals(objectWriter.writeValueAsString(expectedRanking), objectWriter.writeValueAsString(actualRanking));
+    }
+
+    @Test
+    public void calculateTimeForParticipantTest() throws IOException {
+
+        HarryKart harryKart = xmlMapper.readValue(readFileToString("input_1.xml"), HarryKart.class);
+        BigDecimal resultTime = harryKartPlayService.calculateTimeForParticipant(new Participant(1, "TIMETOBELUCKY", 10), harryKart);
+        BigDecimal expectedTime = BigDecimal.valueOf(250.00000).setScale(LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
+        assertEquals(resultTime, expectedTime);
+    }
+
+
+    @Test(expected = ZeroOrNegativeSpeedException.class)
+    public void calculateTimeForParticipantZeroSpeedExceptionTest() throws IOException {
+        HarryKart harryKart = xmlMapper.readValue(readFileToString("input_1.xml"), HarryKart.class);
+//        participant with 0 baseSpeed
+        harryKart.getParticipants().get(1).setBaseSpeed(0);
+        harryKartPlayService.calculateTimeForParticipant(harryKart.getParticipants().get(1), harryKart);
+    }
+
+
+    @Test(expected = ZeroOrNegativeSpeedException.class)
+    public void calculateTimeForParticipantNegativeSpeedExceptionTest() throws IOException {
+        HarryKart harryKart = xmlMapper.readValue(readFileToString("input_1.xml"), HarryKart.class);
+//        participant with negative baseSpeed
+        harryKart.getParticipants().get(0).setBaseSpeed(-1);
+        harryKartPlayService.calculateTimeForParticipant(harryKart.getParticipants().get(0), harryKart);
+
+    }
+
+
+    @Test
+    public void calculateTimeForLaneTest() {
+        ArrayList<Integer> powerUps = new ArrayList<>();
+        Collections.addAll(powerUps, 5, 10);
+        BigDecimal resultTime = harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
+        BigDecimal expectedTime = BigDecimal.valueOf(206.6666666666).setScale(LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
+        assertEquals(resultTime, expectedTime);
+    }
+
+
+    @Test
+    public void calculateTimeForLaneZeroPowerUpsLaneTest() {
+        ArrayList<Integer> powerUps = new ArrayList<>();
+        Collections.addAll(powerUps, 0, 0);
+        BigDecimal resultTime = harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
+        BigDecimal expectedTime = BigDecimal.valueOf(300.00000).setScale(LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
+        assertEquals(resultTime, expectedTime);
+    }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void calculateTimeForLaneInvalidPowerUpsNumberLaneTest() {
+        ArrayList<Integer> powerUps = new ArrayList<>();
+//        3 powerUps for 3 loop is invalid
+        Collections.addAll(powerUps, 1, 2, 3);
+        harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
+    }
+
+    @Test(expected = ZeroOrNegativeSpeedException.class)
+    public void calculateTimeForLaneZeroSpeedInOnOfLoopsTest() {
+        ArrayList<Integer> powerUps = new ArrayList<>();
+        Collections.addAll(powerUps, 5, -15);
+        harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
+
+    }
+
+    @Test(expected = ZeroOrNegativeSpeedException.class)
+    public void calculateTimeForLaneNegativeSpeedTest() {
+        ArrayList<Integer> powerUps = new ArrayList<>();
+        Collections.addAll(powerUps, 5, -30);
+        harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
+
+    }
+
 
 }
