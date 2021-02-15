@@ -7,7 +7,9 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.io.Serializable;
 
-
+/**
+ * @author Ali Fathizadeh 2021-02-15
+ */
 public class Lane implements Serializable {
     @JacksonXmlProperty(isAttribute = true)
     int number;

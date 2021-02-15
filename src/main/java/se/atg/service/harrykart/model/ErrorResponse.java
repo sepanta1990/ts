@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.List;
 
-
+/**
+ * @author Ali Fathizadeh 2021-02-15
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse {
     private String message;

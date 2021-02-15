@@ -16,7 +16,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+
 /**
+ * @author Ali Fathizadeh 2021-02-15
+ *
  * Class to handle Harry Kart race result calculation and return
  */
 @Service

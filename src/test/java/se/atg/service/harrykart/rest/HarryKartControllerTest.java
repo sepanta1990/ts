@@ -30,6 +30,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * @author Ali Fathizadeh 2021-02-15
+ *
+ * Controller layer test
+ */
 @RunWith(SpringRunner.class)
 @WebMvcTest(HarryKartController.class)
 public class HarryKartControllerTest {

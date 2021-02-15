@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Class to represent the elements of a Harry Kart race: Participants, Loops, and power-ups
+ * @author Ali Fathizadeh 2021-02-15
  */
 @JacksonXmlRootElement(localName = "harryKart")
 public class HarryKart implements Serializable {

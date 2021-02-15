@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-
+/**
+ * @author Ali Fathizadeh 2021-02-15
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Ranking {
 

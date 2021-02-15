@@ -10,7 +10,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
- * Class representation of a loop within the race
+ * @author Ali Fathizadeh 2021-02-15
  */
 @JacksonXmlRootElement(localName = "loop")
 public class Loop implements Serializable {

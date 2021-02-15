@@ -26,6 +26,11 @@ import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author Ali Fathizadeh 2021-02-15
+ *
+ * Service layer test
+ */
 @SpringBootTest
 @RunWith(SpringRunner.class)
 public class HarryKartPlayServiceTest {
@@ -51,9 +56,7 @@ public class HarryKartPlayServiceTest {
         HarryKart hk = xmlMapper.readValue(readFileToString("input_0.xml"), HarryKart.class);
 
         List<Ranking> actualRanking = harryKartPlayService.play(hk).getRanking();
-
         List<Ranking> expectedRanking = Arrays.asList(new Ranking(1, "TIMETOBELUCKY"), new Ranking(2, "HERCULES BOKO"), new Ranking(3, "CARGO DOOR"));
-
         assertEquals(objectWriter.writeValueAsString(expectedRanking), objectWriter.writeValueAsString(actualRanking));
     }
 

@@ -11,6 +11,9 @@ import se.atg.service.harrykart.rest.exception.exception.InvalidRequestDataExcep
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @author Ali Fathizadeh 2021-02-15
+ */
 public class CustomExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(InvalidRequestDataException.class)

@@ -8,7 +8,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 import java.io.Serializable;
 
 /**
- * Class representation of the racers by lane number, horse name, and initial speed
+ * @author Ali Fathizadeh 2021-02-15
  */
 @JacksonXmlRootElement(localName = "participant")
 public class Participant implements Serializable {
