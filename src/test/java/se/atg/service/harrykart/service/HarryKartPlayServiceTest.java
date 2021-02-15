@@ -83,31 +83,27 @@ public class HarryKartPlayServiceTest {
      */
     @Test
     public void allWayTieTest() throws IOException {
-        HarryKart hk = xmlMapper.readValue(readFileToString("_AllWayTieTest.xml"), HarryKart.class);
+        HarryKart harryKart = xmlMapper.readValue(readFileToString("_AllWayTieTest.xml"), HarryKart.class);
 
-        List<Ranking> actualRanking = harryKartPlayService.play(hk).getRanking();
-
+        List<Ranking> actualRanking = harryKartPlayService.play(harryKart).getRanking();
         actualRanking.forEach(ranking -> assertEquals(ranking.getPosition(), Integer.valueOf(1)));
     }
 
 
     @Test(expected = IllegalArgumentException.class)
     public void invalidXmlFormatTest() throws Exception {
-        HarryKart hk = xmlMapper.readValue(readFileToString("_InvalidHarryKartFormatTest.xml"), HarryKart.class);
+        HarryKart harryKart = xmlMapper.readValue(readFileToString("_InvalidHarryKartFormatTest.xml"), HarryKart.class);
 
-        harryKartPlayService.play(hk);
+        harryKartPlayService.play(harryKart);
     }
 
 
     @Test
     public void zeroAndNegativePowerTest() throws IOException {
-        HarryKart hk = xmlMapper.readValue(readFileToString("_ZeroAndNegativePowerTest.xml"), HarryKart.class);
-
-        List<Ranking> actualRanking = harryKartPlayService.play(hk).getRanking();
-
-
+        HarryKart harryKart = xmlMapper.readValue(readFileToString("_ZeroAndNegativePowerTest.xml"), HarryKart.class);
+//   should skip participants that stop in while of racing
+        List<Ranking> actualRanking = harryKartPlayService.play(harryKart).getRanking();
         List<Ranking> expectedRanking = Arrays.asList(new Ranking(1, "WAIKIKI SILVIO"), new Ranking(2, "HERCULES BOKO"));
-
         assertEquals(objectWriter.writeValueAsString(expectedRanking), objectWriter.writeValueAsString(actualRanking));
     }
 
@@ -155,7 +151,7 @@ public class HarryKartPlayServiceTest {
         ArrayList<Integer> powerUps = new ArrayList<>();
         Collections.addAll(powerUps, 0, 0);
         BigDecimal resultTime = harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
-        BigDecimal expectedTime = BigDecimal.valueOf(300.00000).setScale(LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
+        BigDecimal expectedTime = BigDecimal.valueOf(300.0000000000).setScale(LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
         assertEquals(resultTime, expectedTime);
     }
 
@@ -163,7 +159,7 @@ public class HarryKartPlayServiceTest {
     @Test(expected = IllegalArgumentException.class)
     public void calculateTimeForLaneInvalidPowerUpsNumberLaneTest() {
         ArrayList<Integer> powerUps = new ArrayList<>();
-//        3 powerUps for 3 loop is invalid
+//        3 powerUps for 3 loops is invalid
         Collections.addAll(powerUps, 1, 2, 3);
         harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
     }
@@ -171,6 +167,7 @@ public class HarryKartPlayServiceTest {
     @Test(expected = ZeroOrNegativeSpeedException.class)
     public void calculateTimeForLaneZeroSpeedInOnOfLoopsTest() {
         ArrayList<Integer> powerUps = new ArrayList<>();
+//        throw exception for zero speed!
         Collections.addAll(powerUps, 5, -15);
         harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
 
@@ -179,6 +176,7 @@ public class HarryKartPlayServiceTest {
     @Test(expected = ZeroOrNegativeSpeedException.class)
     public void calculateTimeForLaneNegativeSpeedTest() {
         ArrayList<Integer> powerUps = new ArrayList<>();
+//       throw exception for negative speed!
         Collections.addAll(powerUps, 5, -30);
         harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
 

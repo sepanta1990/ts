@@ -12,15 +12,18 @@ import se.atg.service.harrykart.model.HarryKart;
 import se.atg.service.harrykart.model.RankingResponse;
 import se.atg.service.harrykart.rest.exception.exception.InvalidRequestDataException;
 import se.atg.service.harrykart.services.HarryKartPlayInterface;
-import se.atg.service.harrykart.services.HarryKartPlayService;
 
 @RestController
 @RequestMapping("/api")
 public class HarryKartController {
     private static final Logger LOGGER = LoggerFactory.getLogger(HarryKartController.class);
 
+    private final HarryKartPlayInterface harryKartPlayService;
+
     @Autowired
-    private HarryKartPlayInterface harryKartPlayService;
+    public HarryKartController(HarryKartPlayInterface harryKartPlayService) {
+        this.harryKartPlayService = harryKartPlayService;
+    }
 
     @RequestMapping(method = RequestMethod.POST, path = "/play", consumes = "application/xml", produces = "application/json")
     public ResponseEntity<RankingResponse> playHarryKart(@RequestBody HarryKart harryKart) {

@@ -54,7 +54,7 @@ public class HarryKartControllerTest {
     @Test
     public void playHarryKarMustReturnOK() throws Exception {
 
-        RankingResponse rankingResponse = new RankingResponse(Arrays.asList(new Ranking(1, "horese1"), new Ranking(2, "horse2")));
+        RankingResponse rankingResponse = new RankingResponse(Arrays.asList(new Ranking(1, "horse1"), new Ranking(2, "horse2")));
 
         when(harryKartPlayService.play(any(HarryKart.class))).thenReturn(rankingResponse);
 
