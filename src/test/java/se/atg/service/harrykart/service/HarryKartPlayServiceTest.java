@@ -20,7 +20,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -28,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ali Fathizadeh 2021-02-15
- *
+ * <p>
  * Service layer test
  */
 @SpringBootTest
@@ -141,8 +143,7 @@ public class HarryKartPlayServiceTest {
 
     @Test
     public void calculateTimeForLaneTest() {
-        ArrayList<Integer> powerUps = new ArrayList<>();
-        Collections.addAll(powerUps, 5, 10);
+        List<Integer> powerUps = Arrays.asList(5, 10);
         BigDecimal resultTime = harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
         BigDecimal expectedTime = BigDecimal.valueOf(206.6666666666).setScale(LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
         assertEquals(resultTime, expectedTime);
@@ -151,8 +152,7 @@ public class HarryKartPlayServiceTest {
 
     @Test
     public void calculateTimeForLaneZeroPowerUpsLaneTest() {
-        ArrayList<Integer> powerUps = new ArrayList<>();
-        Collections.addAll(powerUps, 0, 0);
+        List<Integer> powerUps = Arrays.asList(0, 0);
         BigDecimal resultTime = harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
         BigDecimal expectedTime = BigDecimal.valueOf(300.0000000000).setScale(LOOP_TIME_ROUNDING_SCALE, RoundingMode.DOWN);
         assertEquals(resultTime, expectedTime);
@@ -161,26 +161,23 @@ public class HarryKartPlayServiceTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void calculateTimeForLaneInvalidPowerUpsNumberLaneTest() {
-        ArrayList<Integer> powerUps = new ArrayList<>();
+        List<Integer> powerUps = Arrays.asList(1, 2, 3);
 //        3 powerUps for 3 loops is invalid
-        Collections.addAll(powerUps, 1, 2, 3);
         harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
     }
 
     @Test(expected = ZeroOrNegativeSpeedException.class)
     public void calculateTimeForLaneZeroSpeedInOnOfLoopsTest() {
-        ArrayList<Integer> powerUps = new ArrayList<>();
+        List<Integer> powerUps = Arrays.asList(5, -15);
 //        throw exception for zero speed!
-        Collections.addAll(powerUps, 5, -15);
         harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
 
     }
 
     @Test(expected = ZeroOrNegativeSpeedException.class)
     public void calculateTimeForLaneNegativeSpeedTest() {
-        ArrayList<Integer> powerUps = new ArrayList<>();
+        List<Integer> powerUps = Arrays.asList(5, -30);
 //       throw exception for negative speed!
-        Collections.addAll(powerUps, 5, -30);
         harryKartPlayService.calculateTimeForLane(3, 10, powerUps);
 
     }
